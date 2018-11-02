@@ -18,9 +18,9 @@ function tuileAleatoire(grille){
   // dans la grille de jeu.
   do{
     var tuile = {x: 0, y:0};
-    tuile.y = Math.floor(Math.random() * grille.length)
-    tuile.x = Math.floor(Math.random() * grille[tuile.y].length)
-  } while(grille[tuile.y][tuile.x].estUneMine != null)
+    tuile.y = Math.floor(Math.random() * grille.length);
+    tuile.x = Math.floor(Math.random() * grille[tuile.y].length);
+  } while(grille[tuile.y][tuile.x] != null);
 
   return tuile;
 }
@@ -208,7 +208,7 @@ function demineur(largeur, hauteur, nbMines){
   do {
     var tuileCliquee = attendreClic();
     miseAJourTuile(tuileCliquee, grilleJeu);
-  } while(verifierVictoire(tuileCliquee, grilleJeu, nbMines))
+  } while(verifierVictoire(tuileCliquee, grilleJeu, nbMines));
 }
 
 function testDemineur(){
