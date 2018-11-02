@@ -14,11 +14,13 @@ function afficherImage(x, y, colormap, image){
 }
 
 function tuileAleatoire(grille){
+  // Fonction qui renvoit une tuile aléatoire qui n'a pas déjà été utilisée
+  // dans la grille de jeu.
   do{
     var tuile = {x: 0, y:0};
     tuile.y = Math.floor(Math.random() * grille.length)
     tuile.x = Math.floor(Math.random() * grille[tuile.y].length)
-  } while(grille[tuile.y][tuile.x] != null)
+  } while(grille[tuile.y][tuile.x].estUneMine != null)
 
   return tuile;
 }
@@ -52,12 +54,12 @@ function placerMines(largeur, hauteur, nbMines, x, y){
 
 function attendreClic(){
   // Fonction qui retourne les coordonnées d'un clic de souris de l'utilisateur
-  // la lecture est faite au moment de relâcher la souris.
+  // la lecture est faite au moment d'appuyer sur la souris.
   var position = {x : 0, y : 0};
-  while(!getMouse().down){
+  while(getMouse().down){
     pause(0.01);
   }
-  while(getMouse().down){
+  while(!getMouse().down){
     pause(0.01);
   }
   position.x = Math.floor(getMouse().x/16);
@@ -75,6 +77,10 @@ function initialiserEcran(largeur, hauteur){
 }
 
 function initialiserGrilleJeu(grilleMines){
+  // Fonction qui crée une nouvelle grille de jeu de la largeur et hauteur de
+  // la grille de mines. Pour chaque index de la grille:
+  // estDevoilee exprime si la tuile a été dévoilée ou non (false au début)
+  // estUneMine exprime si la tuile est une mine selon la grille de mine
   var grilleJeu = Array(grilleMines.length);
 
   for(var i = 0; i < grilleJeu.length; i++){
@@ -89,6 +95,7 @@ function initialiserGrilleJeu(grilleMines){
 }
 
 function miseAJourTuile(tuile, grilleJeu){
+  // Procédure qui met à jour l'affichage d'une tuile après la lecture d'un clic
   if(!grilleJeu[tuile.y][tuile.x].estDevoilee){
     if(grilleJeu[tuile.y][tuile.x].estUneMine){
       return;
@@ -152,6 +159,8 @@ function calculerNBCasesNonDevoilees(grilleJeu){
 }
 
 function verifierVictoire(tuile, grilleJeu, nbMines){
+  // Fonction qui vérifie si les conditions de défaite et de victoire
+  // retourne false si une des condition est rencontrée et true sinon.
   if(grilleJeu[tuile.y][tuile.x].estUneMine){
     finDeJeu(false, tuile, grilleJeu);
     return false;
@@ -164,6 +173,8 @@ function verifierVictoire(tuile, grilleJeu, nbMines){
 }
 
 function finDeJeu(playerWon, tuile, grilleJeu){
+  // Procédure qui gère la fin de la partie en fonction de si le joueur
+  // a gagné ou perdu.
   for(var i = 0; i < grilleJeu.length; i++){
     for(var j = 0; j < grilleJeu[i].length; j++){
       if(grilleJeu[i][j].estUneMine){
