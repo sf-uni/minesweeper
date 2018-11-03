@@ -1,3 +1,14 @@
+/*
+Date: 05 novembre 2018
+
+Auteurs:
+- Frenette, Shanie
+- Lamarre, Francis
+
+Version simplifié du populaire jeu de démineur programmé en Javascript pour
+l'environnement CodeBoot.
+*/
+
 load("images.js");
 
 function afficherImage(x, y, colormap, image){
@@ -13,6 +24,8 @@ function afficherImage(x, y, colormap, image){
   }
 }
 
+// -------------------------------------------------------------------------- //
+//CODE À REVOIR
 function tuileAleatoire(grille){
   // Fonction qui renvoit une tuile aléatoire qui n'a pas déjà été utilisée
   // dans la grille de jeu.
@@ -51,24 +64,29 @@ function placerMines(largeur, hauteur, nbMines, x, y){
 
   return grille;
 }
+//CODE À REVOIR
+// -------------------------------------------------------------------------- //
 
 function attendreClic(){
-  // Fonction qui retourne les coordonnées d'un clic de souris de l'utilisateur
+  // Fonction qui retourne les coordonnées de la tuile cliquée par l'utilisateur
   // la lecture est faite au moment d'appuyer sur la souris.
-  var position = {x : 0, y : 0};
+  var position = {x : 0, y : 0}; // Initialisation d'un enregistrement position
+  // Attendre que le bouton de la souris soit relâché
   while(getMouse().down){
     pause(0.01);
   }
+  // Attendre que le bouton de la souris soit appuyé
   while(!getMouse().down){
     pause(0.01);
   }
+  // Conversion des coordonnés en pixels vers les coordonnées de tuiles
   position.x = Math.floor(getMouse().x/16);
   position.y = Math.floor(getMouse().y/16);
   return position;
 }
 
 function initialiserEcran(largeur, hauteur){
-  // Imprime une image vide pour chaque coordonnée du tableau de jeu.
+  // Imprime une tuile non-dévoilée pour chaque coordonnée du tableau de jeu.
   for(var i = 0; i < largeur; i++){
     for(var j = 0; j < hauteur; j++){
       afficherImage(i*16, j*16, colormap, images[11]);
@@ -78,15 +96,18 @@ function initialiserEcran(largeur, hauteur){
 
 function initialiserGrilleJeu(grilleMines){
   // Fonction qui crée une nouvelle grille de jeu de la largeur et hauteur de
-  // la grille de mines. Pour chaque index de la grille:
-  // estDevoilee exprime si la tuile a été dévoilée ou non (false au début)
-  // estUneMine exprime si la tuile est une mine selon la grille de mine
+  // la grille de mines. Pour chaque index represente une tuile de la grille:
+  // estDevoilee exprime si la tuile a été dévoilée (true si oui)
+  // estUneMine exprime si la tuile est une mine (true si oui)
+
+  // Initialisation de la grille de jeu de même dimensions que la grille mines
   var grilleJeu = Array(grilleMines.length);
 
   for(var i = 0; i < grilleJeu.length; i++){
     grilleJeu[i] = Array(grilleMines[i].length);
 
     for(var j = 0; j < grilleJeu[i].length; j++){
+      // Initialisation des éléments de chaque tuile
       grilleJeu[i][j] = {estDevoilee: false, estUneMine: grilleMines[i][j]};
     }
   }
@@ -94,121 +115,199 @@ function initialiserGrilleJeu(grilleMines){
   return grilleJeu;
 }
 
-function miseAJourTuile(tuile, grilleJeu){
-  // Procédure qui met à jour l'affichage d'une tuile après la lecture d'un clic
-  if(!grilleJeu[tuile.y][tuile.x].estDevoilee){
-    if(grilleJeu[tuile.y][tuile.x].estUneMine){
-      return;
-    } else {
-      var nbMines = calculerMine(tuile, grilleJeu);
-      afficherImage(tuile.x*16, tuile.y*16, colormap, images[nbMines]);
-    }
-    grilleJeu[tuile.y][tuile.x].estDevoilee = true;
-    if(nbMines == 0){
-      etendreTuile(tuile, grilleJeu);
-    }
+function devoilerTuile(tuile, grilleJeu){
+  // Procédure qui dévoile la tuile cliquée par le joueur
+
+  // Si la tuile contient une mine,
+  // elle sera dévoilée par la condition de défaite
+  if(grilleJeu[tuile.y][tuile.x].estUneMine){
+    return;
+  }
+
+  // Calculer le nombre de mines autour de la tuile et la dévoiler
+  var nbMines = calculerMines(tuile, grilleJeu);
+  afficherImage(tuile.x*16, tuile.y*16, colormap, images[nbMines]);
+  grilleJeu[tuile.y][tuile.x].estDevoilee = true;
+
+  // Si la tuile n'est adjacente à aucune mine,
+  // dévoiler les tuiles adjacentes
+  if(nbMines == 0){
+    etendreTuile(tuile, grilleJeu);
   }
 }
 
 function etendreTuile(tuile, grilleJeu){
+  // Procédure qui dévoile les tuiles autour d'une tuile désirée
+
+  // Boucle de la rangé au dessus de la tuile à celle d'en dessous
   for(var i = tuile.y - 1; i <= tuile.y + 1; i++){
+
+    // Si la rangé à vérifier est à l'extérieur de la grille de jeu
     if(i < 0 || i >= grilleJeu.length){
       continue;
     }
 
+    // Boucle de la colonne à gauche de la tuile à celle à droite
     for(var j = tuile.x - 1; j <= tuile.x + 1; j++){
+
+      // Si la colonne à vérifier est à l'extérieur de la grille de jeu
       if(j < 0 || j >= grilleJeu[i].length){
         continue;
       }
+
+      // Dévoiler la tuile
       var nouvelleTuile = {x: j, y: i};
-      miseAJourTuile(nouvelleTuile, grilleJeu);
+      var nbMines = calculerMines(nouvelleTuile, grilleJeu);
+      afficherImage(j*16, i*16, colormap, images[nbMines]);
+      grilleJeu[i][j].estDevoilee = true;
     }
   }
 }
 
-function calculerMine (tuile, grilleJeu){
-  var nbMines = 0;
+function calculerMines (tuile, grilleJeu){
+  // Fonction retournant le nombres de mines dans les tuiles adjacentes
+  // en considérant que la tuile n'est pas elle-même une mine
+
+  var nbMines = 0; // Accumulateur de mines
+
+  // Boucle de la rangé au dessus de la tuile à celle d'en dessous
   for(var i = tuile.y - 1; i <= tuile.y + 1; i++){
+
+    // Si la rangé à vérifier est à l'extérieur de la grille de jeu
     if(i < 0 || i >= grilleJeu.length){
       continue;
     }
 
+    // Boucle de la colonne à gauche de la tuile à celle à droite
     for(var j = tuile.x - 1; j <= tuile.x + 1; j++){
+
+      // Si la colonne à vérifier est à l'extérieur de la grille de jeu
       if(j < 0 || j >= grilleJeu[i].length){
         continue;
       }
 
+      // Si la tuile vérifiée est une mine
       if(grilleJeu[i][j].estUneMine){
         nbMines += 1;
       }
     }
   }
+
   return nbMines;
 }
 
-function calculerNBCasesNonDevoilees(grilleJeu){
-  var nbCasesNonDevoilees = 0;
+function calculerNBTuilesNonDevoilees(grilleJeu){
+  // Fonction retournant le nombre de tuiles non dévoilées dans la grille de jeu
+
+  var nbTuilesNonDevoilees = 0; // Accumulateur de tuiles
+
+  // Pour chaque tuile de la grille de jeu
   for(var i = 0; i < grilleJeu.length; i++){
     for(var j = 0; j < grilleJeu[i].length; j++){
+
+      // Si la tuile n'est pas dévoilée
       if(!grilleJeu[i][j].estDevoilee){
-        nbCasesNonDevoilees += 1;
+        nbTuilesNonDevoilees += 1;
       }
+
     }
   }
-  return nbCasesNonDevoilees;
+
+  return nbTuilesNonDevoilees;
 }
 
-function verifierVictoire(tuile, grilleJeu, nbMines){
+function verifierEtatPartie(tuile, grilleJeu, nbMines){
   // Fonction qui vérifie si les conditions de défaite et de victoire
-  // retourne false si une des condition est rencontrée et true sinon.
+  // Retourne true si une des conditions est rencontrée et false sinon
+
+  // Le joueur a cliqué sur une mine?
   if(grilleJeu[tuile.y][tuile.x].estUneMine){
     finDeJeu(false, tuile, grilleJeu);
-    return false;
-  } else if(calculerNBCasesNonDevoilees(grilleJeu) == nbMines){
-      finDeJeu(true, tuile, grilleJeu);
-      return false;
-  } else {
     return true;
+  }
+  // Le joueur a dévoilé toutes les tuiles qui ne sont pas des mines?
+  else if(calculerNBTuilesNonDevoilees(grilleJeu) == nbMines){
+      finDeJeu(true, tuile, grilleJeu);
+      return true;
+  }
+  // Sinon, le jeu continue
+  else {
+    return false;
+  }
+}
+
+function devoilerMines(grilleJeu){
+  // Procédure qui dévoile et affiche toutes les mines de la grille de jeu
+
+  // Pour chaque tuile de la grille de jeu
+  for(var i = 0; i < grilleJeu.length; i++){
+    for(var j = 0; j < grilleJeu[i].length; j++){
+
+      // Si la tuile est une mine
+      if(grilleJeu[i][j].estUneMine){
+        afficherImage(j*16, i*16, colormap, images[9]);
+      }
+
+    }
   }
 }
 
 function finDeJeu(playerWon, tuile, grilleJeu){
   // Procédure qui gère la fin de la partie en fonction de si le joueur
-  // a gagné ou perdu.
-  for(var i = 0; i < grilleJeu.length; i++){
-    for(var j = 0; j < grilleJeu[i].length; j++){
-      if(grilleJeu[i][j].estUneMine){
-        afficherImage(j*16, i*16, colormap, images[9]);
-      }
-    }
-  }
+  // a gagné ou perdu et de la dernière tuile cliquée
 
+  devoilerMines(grilleJeu); // Dévoile toutes les mines du jeu
+
+  // Féliciter le joueur s'il a gagné
   if(playerWon){
     alert("Félicitations, vous avez gagné! :)");
-  }else{
+  }
+  // Sinon, afficher la mine qu'il a cliquée en rouge et consoler le joueur
+  else{
     afficherImage(tuile.x*16, tuile.y*16, colormap, images[10]);
     alert("Désolé, vous avez perdu. :(");
   }
 }
 
 function nouvellePartie(largeur, hauteur, nbMines){
-  // Procedure qui initialise la partie.
+  // Fonction qui initialise la partie et retourne une nouvelle grille de jeu
+
+  // Initialiser l'écran de jeu avec les dimensions des tuiles
   setScreenMode(largeur*16, hauteur*16);
+
+  // Afficher des tuiles non-dévoilées pour chaque tuile
   initialiserEcran(largeur, hauteur);
+
+  // Initialisation de la grille de mines en fonction
+  // de la première tuile cliquée par le joueur
   var premiereTuile = attendreClic();
   var grilleMines = placerMines(largeur, hauteur, nbMines, premiereTuile.x, premiereTuile.y);
+
+  // Initialisation de la grille de jeu
   var grilleJeu = initialiserGrilleJeu(grilleMines);
-  miseAJourTuile(premiereTuile, grilleJeu);
+
+  // Dévoiler la première tuile cliquée
+  devoilerTuile(premiereTuile, grilleJeu);
+
   return grilleJeu;
 }
 
 function demineur(largeur, hauteur, nbMines){
   // Procedure executant la boucle principale du programme.
+
+  // Initialisation de la partie
   var grilleJeu = nouvellePartie(largeur, hauteur, nbMines);
+
+  // Répéter tant que la partie est en cours
   do {
+    // Attendre que le joueur clique une tuile
     var tuileCliquee = attendreClic();
-    miseAJourTuile(tuileCliquee, grilleJeu);
-  } while(verifierVictoire(tuileCliquee, grilleJeu, nbMines));
+
+    // Dévoiler la tuile
+    devoilerTuile(tuileCliquee, grilleJeu);
+
+    // Vérifier que la partie est en cours
+  } while(!verifierEtatPartie(tuileCliquee, grilleJeu, nbMines));
 }
 
 function testDemineur(){
